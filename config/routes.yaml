@@ -4,14 +4,10 @@ controllers:
         namespace: App\Controller
     type: attribute
 
-reservation_index:
-    path: /reservation
-    controller: App\Controller\ReservationController::index
-
-reservation_new:
-    path: /reservation/new
-    controller: App\Controller\ReservationController::new
-
-reservation_calendar:
-    path: /reservation/calendar
-    controller: App\Controller\ReservationController::calendar
+reservation_agenda:
+    path: /reservation/agenda
+    controller: App\Controller\ReservationController::agenda
+    methods: [GET, POST]
+    requirements:
+        year: '\d+'
+        month: '\d+'

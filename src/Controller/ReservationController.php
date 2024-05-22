@@ -1,5 +1,7 @@
 <?php
 
+// src/Controller/ReservationController.php
+
 namespace App\Controller;
 
 use App\Entity\Reservation;
@@ -14,24 +16,8 @@ use Symfony\Component\Routing\Annotation\Route;
 #[Route('/reservation')]
 class ReservationController extends AbstractController
 {
-    #[Route('/', name: 'reservation_index', methods: ['GET'])]
-    public function index(ReservationRepository $reservationRepository): Response
-    {
-        return $this->render('reservation/index.html.twig', [
-            'reservations' => $reservationRepository->findAll(),
-        ]);
-    }
-
-    #[Route('/calendar', name: 'reservation_calendar', methods: ['GET'])]
-    public function calendar(ReservationRepository $reservationRepository): Response
-    {
-        return $this->render('reservation/calendar.html.twig', [
-            'reservations' => $reservationRepository->findAll(),
-        ]);
-    }
-
-    #[Route('/new', name: 'reservation_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
+    #[Route('/agenda', name: 'reservation_agenda', methods: ['GET', 'POST'])]
+    public function agenda(Request $request, EntityManagerInterface $entityManager, ReservationRepository $reservationRepository): Response
     {
         $reservation = new Reservation();
         $form = $this->createForm(ReservationType::class, $reservation);
@@ -41,12 +27,27 @@ class ReservationController extends AbstractController
             $entityManager->persist($reservation);
             $entityManager->flush();
 
-            return $this->redirectToRoute('reservation_index');
+            return $this->redirectToRoute('reservation_agenda');
         }
 
-        return $this->render('reservation/new.html.twig', [
-            'reservation' => $reservation,
+        $month = $request->query->get('month', date('m'));
+        $year = $request->query->get('year', date('Y'));
+
+        $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+        $firstDayOfMonth = (new \DateTime("$year-$month-01"))->format('w');
+        $currentMonth = (int)$month;
+        $currentYear = (int)$year;
+        $currentMonthName = date('F', mktime(0, 0, 0, $currentMonth, 1, $currentYear));
+
+
+        return $this->render('reservation/agenda.html.twig', [
             'form' => $form->createView(),
+            'reservations' => $reservationRepository->findAll(),
+            'currentMonth' => $month,
+            'currentYear' => $year,
+            'daysInMonth' => $daysInMonth,
+            'firstDayOfMonth' => $firstDayOfMonth,
+            'currentMonthName' => $currentMonthName,
         ]);
     }
 }

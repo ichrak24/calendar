@@ -1,0 +1,121 @@
+{# templates/reservation/agenda.html.twig #}
+
+{% extends 'base.html.twig' %}
+
+{% block title %}Reservation Calendar{% endblock %}
+
+{% block body %}
+<h1>Reservation Calendar</h1>
+
+{{ form_start(form) }}
+    {{ form_widget(form) }}
+    <button class="btn">Save</button>
+{{ form_end(form) }}
+
+<div class="calendar-navigation">
+    {% set prevMonth = currentMonth - 1 %}
+    {% set nextMonth = currentMonth + 1 %}
+    {% set prevYear = currentYear %}
+    {% set nextYear = currentYear %}
+
+    {% if prevMonth == 0 %}
+        {% set prevMonth = 12 %}
+        {% set prevYear = currentYear - 1 %}
+    {% endif %}
+
+    {% if nextMonth == 13 %}
+        {% set nextMonth = 1 %}
+        {% set nextYear = currentYear + 1 %}
+    {% endif %}
+
+    <a href="{{ path('reservation_agenda', {'month': prevMonth, 'year': prevYear}) }}">Previous</a>
+    <span>{{ currentMonthName }} {{ currentYear }}</span>
+    <a href="{{ path('reservation_agenda', {'month': nextMonth, 'year': nextYear}) }}">Next</a>
+</div>
+
+<div id="calendar">
+    <div class="month-year">{{ "now"|date("F Y") }}</div>
+    <div class="calendar-grid">
+        {% set daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] %}
+        {% for day in daysOfWeek %}
+            <div class="day-of-week">{{ day }}</div>
+        {% endfor %}
+
+        {% for i in 0..(firstDayOfMonth - 1) %}
+            <div class="day empty"></div>
+        {% endfor %}
+
+        {% for day in 1..daysInMonth %}
+            {% set currentDate = currentYear ~ '-' ~ currentMonth ~ '-' ~ '%02d'|format(day) %}
+            {% set reserved = false %}
+            {% set reservationTimes = [] %}
+            {% for reservation in reservations %}
+                {% if currentDate >= reservation.startDate|date('Y-m-d') and currentDate <= reservation.endDate|date('Y-m-d') %}
+                    {% set reserved = true %}
+                    {% set title = reservation.title %}
+                    {% set reservationTimes = reservationTimes|merge([reservation.startDate|date('H:i') ~ ' - ' ~ reservation.endDate|date('H:i')]) %}
+                {% endif %}
+            {% endfor %}
+            <div class="day {% if reserved %}reserved{% endif %}" title="{{ title|default('') }}">
+                <div>{{ day }}</div>
+                {% if reservationTimes is not empty %}
+                    <div class="reservation-times">
+                        {% for time in reservationTimes %}
+                            <div>{{ time }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .calendar-navigation {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
+    #calendar {
+        width: 100%;
+        max-width: 800px;
+        margin: auto;
+        padding: 20px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    .month-year {
+        text-align: center;
+        font-size: 1.5em;
+        margin-bottom: 20px;
+    }
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 5px;
+    }
+    .day, .day-of-week {
+        text-align: center;
+        padding: 10px;
+        border-radius: 5px;
+    }
+    .day {
+        background: #f0f0f0;
+    }
+    .reserved {
+        background: #ffcccc;
+    }
+    .day-of-week {
+        background: #ddd;
+        font-weight: bold;
+    }
+    .empty {
+        background: transparent;
+    }
+    .reservation-times {
+        font-size: 0.8em;
+        margin-top: 5px;
+    }
+</style>
+{% endblock %}
