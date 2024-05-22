@@ -1,0 +1,53 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Reservation Calendar{% endblock %}
+
+{% block body %}
+<h1>Reservation Calendar</h1>
+
+<div id="calendar"></div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const reservations = {{ reservations|json_encode|raw }};
+        const calendar = document.getElementById('calendar');
+        
+        // Create a basic calendar grid (a simple example)
+        const monthDays = 30;
+        for (let i = 1; i <= monthDays; i++) {
+            const day = document.createElement('div');
+            day.classList.add('day');
+            day.textContent = i;
+            
+            // Highlight reservation days
+            reservations.forEach(reservation => {
+                const startDate = new Date(reservation.startDate);
+                const endDate = new Date(reservation.endDate);
+                const currentDay = new Date(new Date().getFullYear(), new Date().getMonth(), i);
+                
+                if (currentDay >= startDate && currentDay <= endDate) {
+                    day.classList.add('reserved');
+                }
+            });
+
+            calendar.appendChild(day);
+        }
+    });
+</script>
+
+<style>
+    #calendar {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 10px;
+    }
+    .day {
+        padding: 20px;
+        border: 1px solid #ccc;
+        text-align: center;
+    }
+    .reserved {
+        background-color: #ffcccc;
+    }
+</style>
+{% endblock %}
