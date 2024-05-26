@@ -9,6 +9,3 @@ import "./styles/app.css";
 
 console.log("This log comes from assets/app.js - welcome to AssetMapper! 🎉");
 // Export variables
-// Export variables from Twig
-export const saveReservationUrl = '{{ path('save_reservation')|e('js') }}';
-export const csrfToken = '{{ csrf_token('save_reservation') }}';
