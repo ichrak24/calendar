@@ -7,7 +7,9 @@ controllers:
 reservation_agenda:
     path: /reservation/agenda
     controller: App\Controller\ReservationController::agenda
-    methods: [GET, POST]
-    requirements:
-        year: '\d+'
-        month: '\d+'
+    methods: [GET]
+
+save_reservation:
+    path: /save_reservation
+    controller: App\Controller\ReservationController::saveReservation
+    methods: [POST]

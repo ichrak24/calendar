@@ -7,11 +7,6 @@
 {% block body %}
 <h1>Reservation Calendar</h1>
 
-{{ form_start(form) }}
-    {{ form_widget(form) }}
-    <button class="btn">Save</button>
-{{ form_end(form) }}
-
 <div class="calendar-navigation">
     {% set prevMonth = currentMonth - 1 %}
     {% set nextMonth = currentMonth + 1 %}
@@ -56,7 +51,7 @@
                     {% set reservationTimes = reservationTimes|merge([reservation.startDate|date('H:i') ~ ' - ' ~ reservation.endDate|date('H:i')]) %}
                 {% endif %}
             {% endfor %}
-            <div class="day {% if reserved %}reserved{% endif %}" title="{{ title|default('') }}">
+            <div class="day {% if reserved %}reserved{% endif %}" data-date="{{ currentDate }}">
                 <div>{{ day }}</div>
                 {% if reservationTimes is not empty %}
                     <div class="reservation-times">
@@ -70,5 +65,86 @@
     </div>
 </div>
 
+<div id="reservation-info">
+    <p>Selected Dates: <span id="selected-dates"></span></p>
+    <button id="save-reservation">Save Reservation</button>
+</div>
 
+<!-- Hidden div for reservation details -->
+<div id="reservationDetails" style="display: none;">
+    <label for="reservationTitle">Title:</label>
+    <input type="text" id="reservationTitle" name="reservationTitle">
+    <label for="reservationStartTime">Start Time:</label>
+    <input type="time" id="reservationStartTime" name="reservationStartTime">
+    <label for="reservationEndTime">End Time:</label>
+    <input type="time" id="reservationEndTime" name="reservationEndTime">
+</div>
+
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            let startDate = null;
+            let endDate = null;
+
+            document.querySelectorAll('.calendar-grid .day').forEach(day => {
+                day.addEventListener('click', function () {
+                    const date = this.dataset.date;
+                    if (!startDate) {
+                        startDate = date;
+                        this.classList.add('selected-start');
+                    } else if (!endDate) {
+                        endDate = date;
+                        this.classList.add('selected-end');
+                        // Display reservation details input
+                        document.getElementById('reservationDetails').style.display = 'block';
+                    } else {
+                        document.querySelectorAll('.selected-start, .selected-end').forEach(el => el.classList.remove('selected-start', 'selected-end'));
+                        startDate = date;
+                        endDate = null;
+                        this.classList.add('selected-start');
+                        // Hide reservation details input
+                        document.getElementById('reservationDetails').style.display = 'none';
+                    }
+
+                    document.getElementById('selected-dates').textContent = `${startDate || ''} - ${endDate || ''}`;
+                });
+            });
+
+            document.getElementById('save-reservation').addEventListener('click', function () {
+                const title = document.getElementById('reservationTitle').value;
+                const startTime = document.getElementById('reservationStartTime').value;
+                const endTime = document.getElementById('reservationEndTime').value;
+
+                if (!startDate || !endDate || !title || !startTime || !endTime) {
+                    alert('Please fill all the fields.');
+                    return;
+                }
+
+                fetch('{{ path('save_reservation') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token('save_reservation') }}'
+                    },
+                    body: JSON.stringify({ title: title, startDate: `${startDate}T${startTime}`, endDate: `${endDate}T${endTime}` })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Reservation saved successfully.');
+                        location.reload();
+                    } else {
+                        alert('Failed to save reservation.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again.');
+                });
+            });
+        });
+    </script>
 {% endblock %}

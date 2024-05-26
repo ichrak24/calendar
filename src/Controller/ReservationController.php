@@ -4,50 +4,64 @@
 
 namespace App\Controller;
 
-use App\Entity\Reservation;
-use App\Form\ReservationType;
-use App\Repository\ReservationRepository;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use App\Entity\Reservation;
+use Doctrine\ORM\EntityManagerInterface;
+use App\Repository\ReservationRepository;
+use Symfony\Component\HttpFoundation\Response;
+
 
 #[Route('/reservation')]
 class ReservationController extends AbstractController
 {
-    #[Route('/agenda', name: 'reservation_agenda', methods: ['GET', 'POST'])]
-    public function agenda(Request $request, EntityManagerInterface $entityManager, ReservationRepository $reservationRepository): Response
+
+
+    /**
+     * @Route("/reservation/agenda", name="reservation_agenda", methods={"GET"})
+     */
+    public function agenda(Request $request, ReservationRepository $reservationRepository): Response
     {
-        $reservation = new Reservation();
-        $form = $this->createForm(ReservationType::class, $reservation);
-        $form->handleRequest($request);
+        $currentMonth = $request->query->get('month', date('n'));
+        $currentYear = $request->query->get('year', date('Y'));
+        $firstDayOfMonth = new \DateTime("$currentYear-$currentMonth-01");
+        $daysInMonth = $firstDayOfMonth->format('t');
+        $firstDayOfWeek = $firstDayOfMonth->format('w');
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->persist($reservation);
-            $entityManager->flush();
-
-            return $this->redirectToRoute('reservation_agenda');
-        }
-
-        $month = $request->query->get('month', date('m'));
-        $year = $request->query->get('year', date('Y'));
-
-        $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
-        $firstDayOfMonth = (new \DateTime("$year-$month-01"))->format('w');
-        $currentMonth = (int)$month;
-        $currentYear = (int)$year;
-        $currentMonthName = date('F', mktime(0, 0, 0, $currentMonth, 1, $currentYear));
-
+        // Récupérer les réservations du mois
+        $reservations = $reservationRepository->findReservationsByMonth($currentYear, $currentMonth);
 
         return $this->render('reservation/agenda.html.twig', [
-            'form' => $form->createView(),
-            'reservations' => $reservationRepository->findAll(),
-            'currentMonth' => $month,
-            'currentYear' => $year,
+            'currentMonth' => $currentMonth,
+            'currentYear' => $currentYear,
+            'firstDayOfMonth' => $firstDayOfWeek,
             'daysInMonth' => $daysInMonth,
-            'firstDayOfMonth' => $firstDayOfMonth,
-            'currentMonthName' => $currentMonthName,
+            'currentMonthName' => $firstDayOfMonth->format('F'),
+            'reservations' => $reservations,
         ]);
+    }
+
+    /**
+     * @Route("/save_reservation", name="save_reservation", methods={"POST"})
+     */
+    public function saveReservation(Request $request, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+        $title = $data['title'];
+        $startDate = new \DateTime($data['startDate']);
+        $endDate = new \DateTime($data['endDate']);
+
+        $reservation = new Reservation();
+        $reservation->setTitle($title);
+        $reservation->setStartDate($startDate);
+        $reservation->setEndDate($endDate);
+        // Ajoutez les autres champs nécessaires
+
+        $entityManager->persist($reservation);
+        $entityManager->flush();
+
+        return new JsonResponse(['success' => true]);
     }
 }

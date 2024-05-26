@@ -23,8 +23,7 @@ class Reservation
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $endDate = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $description = null;
+
 
     public function getId(): ?int
     {
@@ -63,18 +62,6 @@ class Reservation
     public function setEndDate(?\DateTimeInterface $endDate): static
     {
         $this->endDate = $endDate;
-
-        return $this;
-    }
-
-    public function getDescription(): ?string
-    {
-        return $this->description;
-    }
-
-    public function setDescription(?string $description): static
-    {
-        $this->description = $description;
 
         return $this;
     }
