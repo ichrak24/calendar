@@ -2,50 +2,227 @@ body {
     background-color: skyblue;
 }
 
-    .calendar-navigation {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 20px;
-    }
-    #calendar {
-        width: 100%;
-        max-width: 800px;
-        margin: auto;
-        padding: 20px;
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-    .month-year {
-        text-align: center;
-        font-size: 1.5em;
-        margin-bottom: 20px;
-    }
-    .calendar-grid {
-        display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        gap: 5px;
-    }
-    .day, .day-of-week {
-        text-align: center;
-        padding: 10px;
-        border-radius: 5px;
-    }
-    .day {
-        background: #f0f0f0;
-    }
-    .reserved {
-        background: #ffcccc;
-    }
-    .day-of-week {
-        background: #ddd;
-        font-weight: bold;
-    }
-    .empty {
-        background: transparent;
-    }
-    .reservation-times {
-        font-size: 0.8em;
-        margin-top: 5px;
-    }
+#calendar {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    height: 100%; /* Ajustement pour que le calendrier prenne toute la hauteur */
+    margin-top: 30px;
+}
 
+.calendar-grid {
+    display: flex;
+    align-items: stretch;
+    overflow-x: auto;
+}
+
+.day {
+    flex: 1;
+    border: 1px solid #ccc;
+    padding: 10px;
+    box-sizing: border-box;
+    position: relative;
+    min-height: 500px;
+    overflow: hidden; /* Ajouter le débordement caché */
+}
+
+.reservation-slot {
+    border-bottom: 1px solid #ccc;
+    padding: 5px;
+    box-sizing: border-box;
+    position: relative;
+    height: calc(100% / 24); /* 60px est la hauteur fixe de chaque heure */
+    overflow: hidden;
+
+    
+}
+
+
+
+.day-of-week {
+    border-bottom: 1px solid #ccc;
+    padding: 10px;
+    box-sizing: border-box;
+    flex-grow: 1;
+}
+
+.day-number {
+    padding: 10px;
+    box-sizing: border-box;
+    flex-grow: 1;
+}
+
+.hour-column {
+    display: flex;
+    flex-direction: column; /* Affiche les heures verticalement */
+    flex: 1; /* Pour que la colonne prenne la même largeur que les jours */
+    width: 60px;
+}
+
+.hour {
+    display: flex;
+    justify-content: center; /* Pour centrer le texte verticalement */
+    border-right: 1px solid #ccc;
+    padding: 2px;
+    box-sizing: border-box;
+    min-height: 5px; /* Hauteur fixe pour chaque heure */
+    width: 40px;
+}
+
+
+.hour-row {
+    margin-bottom: 0px; /* Diminuer la marge entre les heures */
+   
+}
+
+.hour-row, .day {
+    display: flex;
+    flex-direction: column;
+}
+
+.hour, .reservation-slot {
+    flex-grow: 1;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+}
+
+.reservation-times {
+    margin-top: 5px;
+}
+
+.selected-start, .selected-end {
+    background-color: lightblue;
+}
+.calendar-grid {
+    display: flex;
+}
+.day {
+    flex-grow: 1;
+}
+
+#reservation-info {
+    margin-top: 20px;
+}
+
+#reservationDetails {
+    margin-top: 10px;
+}
+
+.hidden {
+    display: none;
+}
+
+.empty-column {
+    flex: 1;
+}
+
+.day-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+     /* Pour que le contenu se centre verticalement */
+}
+
+.day-of-week {
+    margin-bottom: 5px; /* Espacement entre le nom du jour de la semaine et le numéro du jour */
+}
+
+.day-number {
+    font-weight: bold; /* Pour mettre en évidence le numéro du jour */
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.month-title {
+    margin: 0 20px; /* Espacement entre les liens précédent et suivant */
+}
+
+.calendar-navigation {
+    display: flex;
+    align-items: center; /* Centrer verticalement */
+    justify-content: center; /* Centrer horizontalement */
+    margin-bottom: 20px; /* Ajouter de l'espace en bas */
+    margin-top: 50px; /* Ajouter de l'espace en haut */
+}
+
+.nav-links {
+    justify-content: center; /* Centrer horizontalement */
+    margin-bottom: 10px; /* Ajouter de l'espace en bas */
+}
+/* Optionnel : Style pour l'icône de calendrier */
+.fa-calendar-alt {
+    margin-right: 10px; /* Espacement entre l'icône et le dropdown */
+}
+
+.hour-row {
+    display: none; /* Masquer la ligne des heures initialement */
+ 
+  margin-top: 80px; /* Ajustez la valeur selon vos besoins */
+    
+        display: flex;
+        flex-direction: column;
+    
+    
+}
+
+
+#calendar-container {
+    display: flex;
+    align-items: flex-start; /* Alignement en haut */
+}
+
+#calendar {
+    /* Styles pour le calendrier */
+    flex: 1; /* Le calendrier prendra le maximum d'espace disponible */
+}
+
+#hours-list {
+    /* Styles pour la liste des heures */
+    width: 100px; /* Largeur de la liste des heures */
+    margin-left: 10px; /* Marge à gauche pour séparer du calendrier */
+}
+
+
+
+
+.hour {
+    /* Ajuster la hauteur de chaque heure */
+    height: 30px; /* Ajustez la valeur selon vos besoins */
+    margin-bottom: 10px;
+}
+
+
+.reservation {
+    padding: 5px;
+    border-radius: 4px;
+    background-color: #007bff; /* Couleur par défaut des réservations */
+    color: white;
+    text-align: center;
+    margin-bottom: 5px;
+    font-size: 0.8rem;
+}
+
+.reservation-slot {
+    position: relative;
+    border: 1px solid #ccc;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.day {
+    border-right: 1px solid #ccc;
+    padding: 5px;
+}
+
+.day-name, .day-number {
+    text-align: center;
+}

@@ -1,5 +1,3 @@
-{# templates/reservation/agenda.html.twig #}
-
 {% extends 'base.html.twig' %}
 
 {% block title %}Reservation Calendar{% endblock %}
@@ -8,76 +6,86 @@
 <h1>Reservation Calendar</h1>
 
 <div class="calendar-navigation">
-    {% set prevMonth = currentMonth - 1 %}
-    {% set nextMonth = currentMonth + 1 %}
-    {% set prevYear = currentYear %}
-    {% set nextYear = currentYear %}
-
-    {% if prevMonth == 0 %}
-        {% set prevMonth = 12 %}
-        {% set prevYear = currentYear - 1 %}
-    {% endif %}
-
-    {% if nextMonth == 13 %}
-        {% set nextMonth = 1 %}
-        {% set nextYear = currentYear + 1 %}
-    {% endif %}
-
-    <a href="{{ path('reservation_agenda', {'month': prevMonth, 'year': prevYear}) }}">Previous</a>
-    <span>{{ currentMonthName }} {{ currentYear }}</span>
-    <a href="{{ path('reservation_agenda', {'month': nextMonth, 'year': nextYear}) }}">Next</a>
+    <div class="nav-links">
+        <i class="far fa-calendar-alt"></i> <!-- Icône de calendrier -->
+        <select id="view-select">
+            <option value="day">Day</option>
+            <option value="week" selected>Week</option>
+            <option value="month">Month</option>
+        </select>
+        <a href="{{ prevWeekUrl }}">Previous Week</a>
+        <span>{{ currentWeekStart|date('F j, Y') }} - {{ currentWeekEnd|date('F j, Y') }}</span>
+        <a href="{{ nextWeekUrl }}">Next Week</a>
+    </div>
 </div>
 
 <div id="calendar">
-    <div class="month-year">{{ "now"|date("F Y") }}</div>
     <div class="calendar-grid">
-        {% set daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] %}
-        {% for day in daysOfWeek %}
-            <div class="day-of-week">{{ day }}</div>
-        {% endfor %}
-
-        {% for i in 0..(firstDayOfMonth - 1) %}
-            <div class="day empty"></div>
-        {% endfor %}
-
-        {% for day in 1..daysInMonth %}
-            {% set currentDate = currentYear ~ '-' ~ currentMonth ~ '-' ~ '%02d'|format(day) %}
-            {% set reserved = false %}
-            {% set reservationTimes = [] %}
-            {% for reservation in reservations %}
-                {% if currentDate >= reservation.startDate|date('Y-m-d') and currentDate <= reservation.endDate|date('Y-m-d') %}
-                    {% set reserved = true %}
-                    {% set title = reservation.title %}
-                    {% set reservationTimes = reservationTimes|merge([reservation.startDate|date('H:i') ~ ' - ' ~ reservation.endDate|date('H:i')]) %}
-                {% endif %}
+        <!-- Afficher les heures horizontalement -->
+        <div class="hour-row">
+            <div class="empty"></div> <!-- Espacement pour les jours -->
+            {% for hour in range(0, 23) %}
+                <span class="hour">{{ hour }}:00</span>
             {% endfor %}
-            <div class="day {% if reserved %}reserved{% endif %}" data-date="{{ currentDate }}">
-                <div>{{ day }}</div>
-                {% if reservationTimes is not empty %}
-                    <div class="reservation-times">
-                        {% for time in reservationTimes %}
-                            <div>{{ time }}</div>
+        </div>
+
+        <!-- Afficher les jours de la semaine avec les réservations -->
+        {% for day in range(0, 6) %}
+            {% set currentDate = currentWeekStart|date_modify('+' ~ day ~ ' days') %}
+            <div class="day">
+                <div class="day-name">{{ currentDate|date('D') }}</div>
+                <div class="day-number">{{ currentDate|date('j') }}</div>
+               {% for hour in range(0, 23) %}
+                    <div class="reservation-slot" data-date="{{ currentDate|date('Y-m-d') }}" data-hour="{{ hour }}">
+                        {% for reservation in reservations %}
+                            {% if reservation.startDate|date('Y-m-d') == currentDate|date('Y-m-d') and reservation.startDate|date('H') == hour %}
+                                <div class="reservation">
+                                    {{ reservation.title }} ({{ reservation.startDate|date('H:i') }} - {{ reservation.endDate|date('H:i') }})
+                                </div>
+                            {% endif %}
                         {% endfor %}
                     </div>
-                {% endif %}
+                {% endfor %}
             </div>
         {% endfor %}
     </div>
 </div>
 
-<div id="reservation-info" class="hidden">
-    <p>Selected Dates: <span id="selected-dates"></span></p>
-    <button id="save-reservation">Save Reservation</button>
-</div>
-
-<!-- Hidden div for reservation details -->
-<div id="reservationDetails" style="display: none;">
-    <label for="reservationTitle">Title:</label>
-    <input type="text" id="reservationTitle" name="reservationTitle">
-    <label for="reservationStartTime">Start Time:</label>
-    <input type="time" id="reservationStartTime" name="reservationStartTime">
-    <label for="reservationEndTime">End Time:</label>
-    <input type="time" id="reservationEndTime" name="reservationEndTime">
+<!-- Modal -->
+<div class="modal fade" id="reservationModal" tabindex="-1" role="dialog" aria-labelledby="reservationModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="reservationModalLabel">Reservation Details</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Form for reservation details -->
+        <form id="reservationForm">
+          <div class="form-group">
+            <label for="reservationTitle">Title:</label>
+            <input type="text" class="form-control" id="reservationTitle" name="reservationTitle">
+          </div>
+          <div class="form-group">
+            <label for="reservationStartTime">Start Time:</label>
+            <input type="time" class="form-control" id="reservationStartTime" name="reservationStartTime">
+          </div>
+          <div class="form-group">
+            <label for="reservationEndTime">End Time:</label>
+            <input type="time" class="form-control" id="reservationEndTime" name="reservationEndTime">
+          </div>
+          <!-- Hidden input fields for date and hour -->
+          <input type="hidden" id="reservationDate" name="reservationDate">
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" id="saveReservationBtn">Save Reservation</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 {% endblock %}
@@ -86,65 +94,62 @@
     {{ parent() }}
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            let startDate = null;
-            let endDate = null;
-
-            document.querySelectorAll('.calendar-grid .day').forEach(day => {
-                day.addEventListener('click', function () {
+            document.querySelectorAll('.calendar-grid .reservation-slot').forEach(slot => {
+                slot.addEventListener('click', function () {
                     const date = this.dataset.date;
-                    if (!startDate) {
-                        startDate = date;
-                        this.classList.add('selected-start');
-                    } else if (!endDate) {
-                        endDate = date;
-                        this.classList.add('selected-end');
-                        // Display reservation details input
-                        document.getElementById('reservationDetails').style.display = 'block';
-                    } else {
-                        document.querySelectorAll('.selected-start, .selected-end').forEach(el => el.classList.remove('selected-start', 'selected-end'));
-                        startDate = date;
-                        endDate = null;
-                        this.classList.add('selected-start');
-                        // Hide reservation details input
-                        document.getElementById('reservationDetails').style.display = 'none';
-                    }
+                    const hour = this.dataset.hour;
+                    const formattedHour = hour.toString().padStart(2, '0');
 
-                    document.getElementById('selected-dates').textContent = `${startDate || ''} - ${endDate || ''}`;
-                    document.getElementById('reservation-info').classList.remove('hidden');
+                    // Vérifier si la case est déjà réservée
+                    const isReserved = this.querySelector('.reservation') !== null;
+
+                    if (!isReserved) {
+                        document.getElementById('reservationStartTime').value = formattedHour + ':00';
+                        const nextHour = (parseInt(hour) + 1).toString().padStart(2, '0');
+                        document.getElementById('reservationEndTime').value = nextHour + ':00';
+                        document.getElementById('reservationDate').value = date;
+                        document.getElementById('reservationTitle').value = '';
+                        $('#reservationModal').modal('show');
+                    } else {
+                        // Si la case est déjà réservée, afficher un message ou effectuer une autre action
+                        alert('Cette heure est déjà réservée.');
+                    }
                 });
             });
 
-            document.getElementById('save-reservation').addEventListener('click', function () {
+            document.getElementById('saveReservationBtn').addEventListener('click', function () {
                 const title = document.getElementById('reservationTitle').value;
                 const startTime = document.getElementById('reservationStartTime').value;
                 const endTime = document.getElementById('reservationEndTime').value;
+                const date = document.getElementById('reservationDate').value;
 
-                if (!startDate || !endDate || !title || !startTime || !endTime) {
-                    alert('Please fill all the fields.');
-                    return;
-                }
+                const reservationDetails = {
+                    reservationTitle: title,
+                    reservationStartTime: startTime,
+                    reservationEndTime: endTime,
+                    reservationDate: date,
+                };
 
                 fetch('{{ path('save_reservation') }}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token('save_reservation') }}'
                     },
-                    body: JSON.stringify({ title: title, startDate: `${startDate}T${startTime}`, endDate: `${endDate}T${endTime}` })
+                    body: JSON.stringify(reservationDetails),
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Reservation saved successfully.');
-                        location.reload();
-                    } else {
-                        alert('Failed to save reservation.');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred. Please try again.');
-                });
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload(); // Reload the page to show the new reservation
+                        } else {
+                            alert('Error saving reservation');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+
+                $('#reservationModal').modal('hide');
             });
         });
     </script>

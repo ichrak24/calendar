@@ -16,19 +16,28 @@ class ReservationRepository extends ServiceEntityRepository
         parent::__construct($registry, Reservation::class);
     }
 
-    public function findReservationsByMonth(int $year, int $month): array
+    public function findReservationsByWeek(\DateTimeInterface $startOfWeek, \DateTimeInterface $endOfWeek): array
     {
-        $startDate = new \DateTime("$year-$month-01");
-        $endDate = (clone $startDate)->modify('last day of this month');
-
         return $this->createQueryBuilder('r')
-            ->where('r.startDate <= :endDate')
-            ->andWhere('r.endDate >= :startDate')
-            ->setParameter('startDate', $startDate)
-            ->setParameter('endDate', $endDate)
+            ->andWhere('r.startDate >= :startOfWeek')
+            ->andWhere('r.endDate <= :endOfWeek')
+            ->setParameter('startOfWeek', $startOfWeek->format('Y-m-d H:i:s'))
+            ->setParameter('endOfWeek', $endOfWeek->format('Y-m-d H:i:s'))
             ->getQuery()
             ->getResult();
     }
+
+
+
+
+
+
+
+
+
+
+
+
 
     //    /**
     //     * @return Reservation[] Returns an array of Reservation objects
@@ -54,4 +63,8 @@ class ReservationRepository extends ServiceEntityRepository
     //            ->getOneOrNullResult()
     //        ;
     //    }
+
+
+
+
 }

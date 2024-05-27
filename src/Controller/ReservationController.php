@@ -12,33 +12,47 @@ use App\Entity\Reservation;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Repository\ReservationRepository;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 
 #[Route('/reservation')]
 class ReservationController extends AbstractController
 {
 
-
     /**
-     * @Route("/reservation/agenda", name="reservation_agenda", methods={"GET"})
+     * @Route("/agenda", name="reservation_agenda", methods={"GET"})
      */
-    public function agenda(Request $request, ReservationRepository $reservationRepository): Response
-    {
-        $currentMonth = $request->query->get('month', date('n'));
-        $currentYear = $request->query->get('year', date('Y'));
-        $firstDayOfMonth = new \DateTime("$currentYear-$currentMonth-01");
-        $daysInMonth = $firstDayOfMonth->format('t');
-        $firstDayOfWeek = $firstDayOfMonth->format('w');
+    public function agenda(
+        Request $request,
+        ReservationRepository $reservationRepository,
+        UrlGeneratorInterface $urlGenerator
+    ): Response {
+        $currentWeek = $request->query->get('week', (new \DateTime())->format('W'));
+        $currentYear = $request->query->get('year', (new \DateTime())->format('Y'));
 
-        // Récupérer les réservations du mois
-        $reservations = $reservationRepository->findReservationsByMonth($currentYear, $currentMonth);
+        $prevWeek = $currentWeek - 1;
+        $nextWeek = $currentWeek + 1;
+
+        $prevWeekUrl = $urlGenerator->generate('reservation_agenda', ['week' => $prevWeek, 'year' => $currentYear]);
+        $nextWeekUrl = $urlGenerator->generate('reservation_agenda', ['week' => $nextWeek, 'year' => $currentYear]);
+
+        $currentWeekStart = new \DateTime();
+        $currentWeekStart->setISODate($currentYear, $currentWeek);
+
+        $currentWeekEnd = clone $currentWeekStart;
+        $currentWeekEnd->modify('+6 days');
+
+        $reservations = $reservationRepository->findReservationsByWeek($currentWeekStart, $currentWeekEnd);
 
         return $this->render('reservation/agenda.html.twig', [
-            'currentMonth' => $currentMonth,
+            'currentWeek' => $currentWeek,
             'currentYear' => $currentYear,
-            'firstDayOfMonth' => $firstDayOfWeek,
-            'daysInMonth' => $daysInMonth,
-            'currentMonthName' => $firstDayOfMonth->format('F'),
+            'prevWeek' => $prevWeek,
+            'nextWeek' => $nextWeek,
+            'prevWeekUrl' => $prevWeekUrl,
+            'nextWeekUrl' => $nextWeekUrl,
+            'currentWeekStart' => $currentWeekStart,
+            'currentWeekEnd' => $currentWeekEnd,
             'reservations' => $reservations,
         ]);
     }
@@ -49,19 +63,25 @@ class ReservationController extends AbstractController
     public function saveReservation(Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
-        $title = $data['title'];
-        $startDate = new \DateTime($data['startDate']);
-        $endDate = new \DateTime($data['endDate']);
+        $title = $data['reservationTitle'];
+        $startTime = $this->convertTo24HourFormat($data['reservationStartTime']);
+        $endTime = $this->convertTo24HourFormat($data['reservationEndTime']);
+        $date = $data['reservationDate'];
 
         $reservation = new Reservation();
         $reservation->setTitle($title);
-        $reservation->setStartDate($startDate);
-        $reservation->setEndDate($endDate);
-        // Ajoutez les autres champs nécessaires
+        $reservation->setStartDate(new \DateTime($date . ' ' . $startTime));
+        $reservation->setEndDate(new \DateTime($date . ' ' . $endTime));
 
         $entityManager->persist($reservation);
         $entityManager->flush();
 
         return new JsonResponse(['success' => true]);
+    }
+
+    private function convertTo24HourFormat(string $time): string
+    {
+        $date = \DateTime::createFromFormat('H:i', $time);
+        return $date->format('H:i');
     }
 }
