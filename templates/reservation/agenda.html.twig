@@ -13,9 +13,9 @@
             <option value="week" selected>Week</option>
             <option value="month">Month</option>
         </select>
-        <a href="{{ prevWeekUrl }}">Previous Week</a>
+        <a href="{{ prevWeekUrl }}"><i class="fas fa-chevron-left"></i>Previous Week</a>
         <span>{{ currentWeekStart|date('F j, Y') }} - {{ currentWeekEnd|date('F j, Y') }}</span>
-        <a href="{{ nextWeekUrl }}">Next Week</a>
+        <a href="{{ nextWeekUrl }}">Next Week<i class="fas fa-chevron-right"></i></a>
     </div>
 </div>
 
@@ -152,5 +152,52 @@
                 $('#reservationModal').modal('hide');
             });
         });
+         // Gestionnaire d'événements pour le changement de vue (day, week, month)
+    document.getElementById('view-select').addEventListener('change', function () {
+        const selectedView = this.value;
+
+        // Masquer tous les éléments de réservation existants
+        document.querySelectorAll('.reservation').forEach(reservation => {
+            reservation.style.display = 'none';
+        });
+
+        // Afficher les éléments de réservation en fonction de la vue sélectionnée
+        if (selectedView === 'day') {
+            // Afficher les réservations pour la journée actuelle
+            const currentDate = new Date();
+            const currentDateString = currentDate.toISOString().split('T')[0];
+
+            document.querySelectorAll(`.reservation-slot[data-date='${currentDateString}']`).forEach(slot => {
+                slot.querySelector('.reservation').style.display = 'block';
+            });
+        } else if (selectedView === 'week') {
+            // Afficher les réservations pour la semaine actuelle
+            const currentWeekStart = new Date('{{ currentWeekStart|date('Y-m-d') }}');
+            const currentWeekEnd = new Date('{{ currentWeekEnd|date('Y-m-d') }}');
+
+            document.querySelectorAll('.reservation-slot').forEach(slot => {
+                const slotDate = new Date(slot.dataset.date);
+
+                if (slotDate >= currentWeekStart && slotDate <= currentWeekEnd) {
+                    slot.querySelector('.reservation').style.display = 'block';
+                }
+            });
+        } else if (selectedView === 'month') {
+            // Afficher les réservations pour le mois actuel
+            const currentDate = new Date();
+            const currentMonth = currentDate.getMonth();
+            const currentYear = currentDate.getFullYear();
+
+            document.querySelectorAll('.reservation-slot').forEach(slot => {
+                const slotDate = new Date(slot.dataset.date);
+                const slotMonth = slotDate.getMonth();
+                const slotYear = slotDate.getFullYear();
+
+                if (slotMonth === currentMonth && slotYear === currentYear) {
+                    slot.querySelector('.reservation').style.display = 'block';
+                }
+            });
+        }
+    });
     </script>
 {% endblock %}
